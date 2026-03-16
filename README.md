@@ -69,7 +69,6 @@ Several classification algorithms were tested and compared:
 
 * Logistic Regression
 * Random Forest
-* Gradient Boosting
 * Support Vector Machine (SVM)
 
 The models were evaluated using **ROC-AUC score**, which measures how well the model distinguishes between allergy and non-allergy cases.
@@ -90,9 +89,9 @@ Example output:
 
 ```
 {
-  "peanut_allergy_risk": 0.38,
-  "milk_allergy_risk": 0.21,
-  "egg_allergy_risk": 0.29
+  "peanut_allergy_risk": 0.17,
+  "milk_allergy_risk": 0.10,
+  "egg_allergy_risk": 0.14
 }
 ```
 
@@ -107,13 +106,12 @@ project/
 │   └── foodAllergyAnalysisZenodo.csv
 │
 ├── notebooks/
-│   └── allergy_model.ipynb
+│   └── main.ipynb
+│   └── peanut.ipynb
+│   └── milk.ipynb
+│   └── egg.ipynb
 │
-├── src/
-│   └── model_training.py
-│
-├── README.md
-└── requirements.txt
+└──  README.md
 ```
 
 ---
@@ -122,19 +120,20 @@ project/
 
 Example patient input:
 
-| Feature | Value |
-| ------- | ----- |
-| Age     | 5     |
-| Gender  | Male  |
-| Race    | White |
-| Asthma  | No    |
-| Eczema  | Yes   |
+| Feature   | Value        |
+| --------- | ------------ |
+| Age       |       1      |
+| Gender    |     Male     |
+| Race      |     White    |
+| Ethnicity | Non-hispanic |
+| Asthma    |      Yes     |
+| Eczema    |      Yes     |
 
 Predicted risks:
 
-* Peanut allergy risk: 38%
-* Milk allergy risk: 21%
-* Egg allergy risk: 29%
+* Peanut allergy risk: 17%
+* Milk allergy risk: 10%
+* Egg allergy risk: 14%
 
 ---
 
@@ -168,6 +167,7 @@ Possible improvements include:
 * scikit-learn
 * NumPy
 * Jupyter Notebook
+* matplotlip pyplot
 
 ---
 
