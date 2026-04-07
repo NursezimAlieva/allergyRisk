@@ -11,7 +11,6 @@ st.title("Прогноз риска развития пищевой аллерг
 # Загрузка модели
 @st.cache_resource
 def load_model():
-    # Убедись, что файл модели называется именно так
     return joblib.load('allergy_predictor_v1.pkl')
 
 data = load_model()
@@ -45,11 +44,9 @@ if st.button("Рассчитать риски"):
     st.subheader("Вероятность наличия аллергии:")
     cols = st.columns(3)
 
-    predictions = {}
     for i, (name, model) in enumerate(models.items()):
         prob = model.predict_proba(input_encoded)[0][1]
         risk_percent = round(float(prob) * 100, 1)
-        predictions[name] = risk_percent
 
         with cols[i % 3]:
             color = "red" if risk_percent > 50 else "orange" if risk_percent > 20 else "green"
@@ -58,45 +55,48 @@ if st.button("Рассчитать риски"):
 
     st.divider()
 
-    # --- ШАГ 1: ВИЗУАЛИЗАЦИЯ ФАКТОРОВ РИСКА ---
-    st.subheader("📊 Анализ факторов влияния")
-    st.write("Ниже показано, какие признаки сильнее всего повлияли на прогноз:")
+    # --- ГРАФИКИ ---
+    chart_col1, chart_col2 = st.columns(2)
 
-    target_model = models['peanut']
+    with chart_col1:
+        # ШАГ 1: ВАЖНОСТЬ ПРИЗНАКОВ
+        st.subheader("Факторы влияния")
+        target_model = models['peanut']
 
-    # Извлекаем важность признаков в зависимости от типа модели
-    if hasattr(target_model, 'coef_'):
-        # Для Логистической регрессии
-        importances = target_model.coef_[0]
-    elif hasattr(target_model, 'feature_importances_'):
-        # Для Random Forest
-        importances = target_model.feature_importances_
-    elif hasattr(target_model, 'calibrated_classifiers_'):
-        # Для калиброванных моделей
-        clf = target_model.calibrated_classifiers_[0].base_estimator
-        importances = clf.coef_[0] if hasattr(clf, 'coef_') else clf.feature_importances_
-    else:
-        importances = np.zeros(len(X_columns))
+        if hasattr(target_model, 'coef_'):
+            importances = target_model.coef_[0]
+        elif hasattr(target_model, 'feature_importances_'):
+            importances = target_model.feature_importances_
+        else:
+            importances = np.zeros(len(X_columns))
 
-    # Создаем DataFrame для графика
-    importance_df = pd.DataFrame({
-        'Feature': X_columns,
-        'Importance': importances
-    }).sort_values(by='Importance', ascending=True)
+        importance_df = pd.DataFrame({'Feature': X_columns, 'Value': importances}).sort_values(by='Value')
 
-    # Строим график
-    fig, ax = plt.subplots(figsize=(10, 6))
+        fig1, ax1 = plt.subplots()
+        colors = ['#ff9999' if x > 0 else '#66b3ff' for x in importance_df['Value']]
+        ax1.barh(importance_df['Feature'], importance_df['Value'], color=colors)
+        st.pyplot(fig1)
 
-    # Если это RandomForest, все значения положительные. Если регрессия — могут быть отрицательные.
-    if hasattr(target_model, 'coef_'):
-        colors = ['#ff9999' if x > 0 else '#66b3ff' for x in importance_df['Importance']]
-    else:
-        colors = 'skyblue' # Для леса просто один цвет
+    with chart_col2:
+        # ШАГ 2: ВОЗРАСТНАЯ ДИНАМИКА
+        st.subheader("Динамика по годам")
 
-    ax.barh(importance_df['Feature'], importance_df['Importance'], color=colors)
-    ax.set_xlabel('Степень влияния на результат')
-    ax.set_title('Важность признаков в модели')
+        years = np.arange(1990, 2026, 2)
+        trends = []
 
-    st.pyplot(fig)
+        # Считаем риск для выбранной аллергии (например, арахис) для разных годов рождения
+        for y in years:
+            temp_input = user_input.copy()
+            temp_input['BIRTH_YEAR'] = y
+            temp_df = pd.DataFrame([temp_input])
+            temp_encoded = pd.get_dummies(temp_df).reindex(columns=X_columns, fill_value=0)
+            prob = models['peanut'].predict_proba(temp_encoded)[0][1]
+            trends.append(prob * 100)
+
+        fig2, ax2 = plt.subplots()
+        ax2.plot(years, trends, marker='o', color='green', linestyle='--')
+        ax2.set_xlabel("Год рождения")
+        ax2.set_ylabel("Риск %")
+        st.pyplot(fig2)
 
 st.info("Примечание: Данная модель носит ознакомительный характер и не является медицинским диагнозом.")
